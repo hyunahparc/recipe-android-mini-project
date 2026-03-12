@@ -2,6 +2,7 @@ package com.example.myrecipeapp.ui.screen
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -25,6 +26,8 @@ fun RecipeListScreen(viewModel: RecipeListViewModel = viewModel()) {
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val categories by viewModel.categories.collectAsState()
+    val selectedCategory by viewModel.selectedCategory.collectAsState()
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
@@ -44,9 +47,25 @@ fun RecipeListScreen(viewModel: RecipeListViewModel = viewModel()) {
             singleLine = true,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 16.dp),
+                .padding(bottom = 12.dp),
             shape = RoundedCornerShape(12.dp)
         )
+
+        // Category filter chips
+        if (categories.isNotEmpty()) {
+            LazyRow(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.padding(bottom = 16.dp)
+            ) {
+                items(categories) { category ->
+                    FilterChip(
+                        selected = selectedCategory == category.name,
+                        onClick = { viewModel.onCategorySelected(category.name) },
+                        label = { Text(category.name) }
+                    )
+                }
+            }
+        }
 
         when {
             isLoading -> {
