@@ -3,7 +3,9 @@ package com.example.myrecipeapp
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.*
 import com.example.myrecipeapp.ui.screen.RecipeListScreen
+import com.example.myrecipeapp.ui.screen.SplashScreen
 import com.example.myrecipeapp.ui.theme.MyRecipeAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -11,7 +13,13 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             MyRecipeAppTheme {
-                RecipeListScreen()
+                var showSplash by remember { mutableStateOf(true) }
+
+                if (showSplash) {
+                    SplashScreen(onSplashFinished = { showSplash = false })
+                } else {
+                    RecipeListScreen()
+                }
             }
         }
     }
