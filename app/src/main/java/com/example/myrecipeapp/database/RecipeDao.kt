@@ -20,9 +20,15 @@ interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE title LIKE '%' || :query || '%'")
     suspend fun searchRecipes(query: String): List<RecipeEntity>
 
+    @Query("SELECT * FROM recipes WHERE title LIKE '%' || :query || '%' LIMIT :limit OFFSET :offset")
+    suspend fun searchRecipesPaged(query: String, limit: Int, offset: Int): List<RecipeEntity>
+
     // 카테고리로 필터
     @Query("SELECT * FROM recipes WHERE category = :category")
     suspend fun getRecipesByCategory(category: String): List<RecipeEntity>
+
+    @Query("SELECT * FROM recipes WHERE category = :category LIMIT :limit OFFSET :offset")
+    suspend fun getRecipesByCategoryPaged(category: String, limit: Int, offset: Int): List<RecipeEntity>
 
     // id로 레시피 조회
     @Query("SELECT * FROM recipes WHERE id = :id")
