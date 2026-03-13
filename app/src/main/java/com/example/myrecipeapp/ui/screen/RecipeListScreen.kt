@@ -1,5 +1,6 @@
 package com.example.myrecipeapp.ui.screen
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
@@ -22,7 +23,10 @@ import com.example.myrecipeapp.model.Recipe
 import com.example.myrecipeapp.viewmodel.RecipeListViewModel
 
 @Composable
-fun RecipeListScreen(viewModel: RecipeListViewModel = viewModel()) {
+fun RecipeListScreen(
+    onRecipeClick: (String) -> Unit = {},
+    viewModel: RecipeListViewModel = viewModel()
+) {
     val recipes by viewModel.recipes.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isLoadingMore by viewModel.isLoadingMore.collectAsState()
@@ -110,7 +114,7 @@ fun RecipeListScreen(viewModel: RecipeListViewModel = viewModel()) {
                     verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(recipes) { recipe ->
-                        RecipeCard(recipe = recipe)
+                        RecipeCard(recipe = recipe, onClick = { onRecipeClick(recipe.id) })
                     }
                     if (isLoadingMore) {
                         item {
@@ -129,9 +133,9 @@ fun RecipeListScreen(viewModel: RecipeListViewModel = viewModel()) {
 }
 
 @Composable
-fun RecipeCard(recipe: Recipe) {
+fun RecipeCard(recipe: Recipe, onClick: () -> Unit = {}) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(12.dp),
         elevation = CardDefaults.cardElevation(4.dp)
     ) {

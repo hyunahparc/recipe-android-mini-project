@@ -4,6 +4,10 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.runtime.*
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import com.example.myrecipeapp.ui.screen.RecipeDetailScreen
 import com.example.myrecipeapp.ui.screen.RecipeListScreen
 import com.example.myrecipeapp.ui.screen.SplashScreen
 import com.example.myrecipeapp.ui.theme.MyRecipeAppTheme
@@ -18,7 +22,23 @@ class MainActivity : ComponentActivity() {
                 if (showSplash) {
                     SplashScreen(onSplashFinished = { showSplash = false })
                 } else {
-                    RecipeListScreen()
+                    val navController = rememberNavController()
+                    NavHost(navController = navController, startDestination = "list") {
+                        composable("list") {
+                            RecipeListScreen(
+                                onRecipeClick = { recipeId ->
+                                    navController.navigate("detail/$recipeId")
+                                }
+                            )
+                        }
+                        composable("detail/{recipeId}") { backStackEntry ->
+                            val recipeId = backStackEntry.arguments?.getString("recipeId") ?: return@composable
+                            RecipeDetailScreen(
+                                recipeId = recipeId,
+                                onBack = { navController.popBackStack() }
+                            )
+                        }
+                    }
                 }
             }
         }

@@ -74,6 +74,36 @@ class RecipeRepository(private val db: AppDatabase) {
         }
     }
 
+    suspend fun getRecipeById(id: String): Result<Recipe> {
+        // Try DB first
+        val cached = db.recipeDao().getRecipeById(id)
+        if (cached != null && cached.instructions.isNotBlank()) {
+            return Result.success(cached.toRecipe())
+        }
+        // Fetch full details from API
+        return try {
+            val response = RetrofitInstance.api.getMealById(id)
+            val dto = response.meals?.firstOrNull()
+                ?: return Result.failure(Exception("Recipe not found"))
+            val recipe = Recipe(
+                id = dto.id,
+                title = dto.title,
+                category = dto.category.orEmpty(),
+                area = dto.area.orEmpty(),
+                thumbnail = dto.thumbnail.orEmpty(),
+                instructions = dto.instructions.orEmpty(),
+                ingredients = dto.getIngredients().map { (name, measure) ->
+                    Ingredient(name, measure)
+                }
+            )
+            db.recipeDao().insertRecipe(recipe.toEntity())
+            Result.success(recipe)
+        } catch (e: Exception) {
+            if (cached != null) Result.success(cached.toRecipe())
+            else Result.failure(e)
+        }
+    }
+
     suspend fun searchRecipesPaged(query: String, page: Int, pageSize: Int = 30): Result<List<Recipe>> {
         if (page == 0) {
             try {
