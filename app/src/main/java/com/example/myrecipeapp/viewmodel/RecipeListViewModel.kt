@@ -1,7 +1,9 @@
 package com.example.myrecipeapp.viewmodel
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.myrecipeapp.database.AppDatabase
 import com.example.myrecipeapp.model.Category
 import com.example.myrecipeapp.model.Recipe
 import com.example.myrecipeapp.repository.RecipeRepository
@@ -11,9 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
-class RecipeListViewModel : ViewModel() {
+class RecipeListViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository = RecipeRepository()
+    private val repository = RecipeRepository(AppDatabase.getInstance(application))
 
     private val _recipes = MutableStateFlow<List<Recipe>>(emptyList())
     val recipes: StateFlow<List<Recipe>> = _recipes
