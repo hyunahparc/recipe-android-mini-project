@@ -65,6 +65,9 @@ dependencies {
     // ViewModel
     implementation(libs.viewmodel.compose)
 
+    // Navigation
+    implementation(libs.navigation.compose)
+
     // Coroutines
     implementation(libs.kotlinx.coroutines.android)
 
