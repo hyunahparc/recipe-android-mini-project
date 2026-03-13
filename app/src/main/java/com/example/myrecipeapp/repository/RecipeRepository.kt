@@ -1,14 +1,22 @@
 package com.example.myrecipeapp.repository
 
+import com.example.myrecipeapp.database.AppDatabase
+import com.example.myrecipeapp.database.CategoryEntity
+import com.example.myrecipeapp.database.RecipeEntity
 import com.example.myrecipeapp.model.Category
 import com.example.myrecipeapp.model.Ingredient
 import com.example.myrecipeapp.model.Recipe
 import com.example.myrecipeapp.network.RetrofitInstance
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 
-class RecipeRepository {
+class RecipeRepository(private val db: AppDatabase) {
+
+    private val gson = Gson()
 
     suspend fun searchRecipes(query: String): Result<List<Recipe>> {
         return try {
+            // Fetch from API
             val response = RetrofitInstance.api.searchMeals(query)
             val recipes = response.meals?.map { dto ->
                 Recipe(
@@ -23,21 +31,46 @@ class RecipeRepository {
                     }
                 )
             } ?: emptyList()
+
+            // Save to DB
+            db.recipeDao().insertRecipes(recipes.map { it.toEntity() })
+
+            // Delete cache older than 24 hours
+            val threshold = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
+            db.recipeDao().deleteOldRecipes(threshold)
+
             Result.success(recipes)
         } catch (e: Exception) {
-            Result.failure(e)
+            // Fall back to DB on API failure
+            val cached = db.recipeDao().searchRecipes(query)
+            if (cached.isNotEmpty()) {
+                Result.success(cached.map { it.toRecipe() })
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
     suspend fun getCategories(): Result<List<Category>> {
         return try {
+            // Fetch from API
             val response = RetrofitInstance.api.getCategories()
             val categories = response.categories?.map { dto ->
                 Category(id = dto.id, name = dto.name, thumbnail = dto.thumbnail)
             } ?: emptyList()
+
+            // Save to DB
+            db.categoryDao().insertCategories(categories.map { it.toEntity() })
+
             Result.success(categories)
         } catch (e: Exception) {
-            Result.failure(e)
+            // Fall back to DB on API failure
+            val cached = db.categoryDao().getAllCategories()
+            if (cached.isNotEmpty()) {
+                Result.success(cached.map { it.toCategory() })
+            } else {
+                Result.failure(e)
+            }
         }
     }
 
@@ -53,9 +86,49 @@ class RecipeRepository {
                     thumbnail = dto.thumbnail.orEmpty()
                 )
             } ?: emptyList()
+
+            db.recipeDao().insertRecipes(recipes.map { it.toEntity() })
+
             Result.success(recipes)
         } catch (e: Exception) {
-            Result.failure(e)
+            val cached = db.recipeDao().getRecipesByCategory(category)
+            if (cached.isNotEmpty()) {
+                Result.success(cached.map { it.toRecipe() })
+            } else {
+                Result.failure(e)
+            }
         }
     }
+
+    // Recipe → RecipeEntity (convert to DB entity)
+    private fun Recipe.toEntity() = RecipeEntity(
+        id = id,
+        title = title,
+        category = category,
+        area = area,
+        thumbnail = thumbnail,
+        instructions = instructions,
+        ingredientsJson = gson.toJson(ingredients)
+    )
+
+    // RecipeEntity → Recipe (convert back from DB entity)
+    private fun RecipeEntity.toRecipe(): Recipe {
+        val type = object : TypeToken<List<Ingredient>>() {}.type
+        val ingredients: List<Ingredient> = gson.fromJson(ingredientsJson, type) ?: emptyList()
+        return Recipe(
+            id = id,
+            title = title,
+            category = category,
+            area = area,
+            thumbnail = thumbnail,
+            instructions = instructions,
+            ingredients = ingredients
+        )
+    }
+
+    // Category → CategoryEntity
+    private fun Category.toEntity() = CategoryEntity(id = id, name = name, thumbnail = thumbnail)
+
+    // CategoryEntity → Category
+    private fun CategoryEntity.toCategory() = Category(id = id, name = name, thumbnail = thumbnail)
 }
