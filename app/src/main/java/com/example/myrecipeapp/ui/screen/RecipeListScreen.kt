@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -24,10 +25,24 @@ import com.example.myrecipeapp.viewmodel.RecipeListViewModel
 fun RecipeListScreen(viewModel: RecipeListViewModel = viewModel()) {
     val recipes by viewModel.recipes.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
+    val isLoadingMore by viewModel.isLoadingMore.collectAsState()
+    val hasMore by viewModel.hasMore.collectAsState()
     val error by viewModel.error.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val categories by viewModel.categories.collectAsState()
     val selectedCategory by viewModel.selectedCategory.collectAsState()
+    val listState = rememberLazyListState()
+
+    val shouldLoadMore by remember {
+        derivedStateOf {
+            val lastVisible = listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index ?: 0
+            lastVisible >= listState.layoutInfo.totalItemsCount - 5
+        }
+    }
+
+    LaunchedEffect(shouldLoadMore) {
+        if (shouldLoadMore && hasMore) viewModel.loadNextPage()
+    }
 
     Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
 
@@ -90,9 +105,22 @@ fun RecipeListScreen(viewModel: RecipeListViewModel = viewModel()) {
                 }
             }
             else -> {
-                LazyColumn(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                LazyColumn(
+                    state = listState,
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     items(recipes) { recipe ->
                         RecipeCard(recipe = recipe)
+                    }
+                    if (isLoadingMore) {
+                        item {
+                            Box(
+                                modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                CircularProgressIndicator()
+                            }
+                        }
                     }
                 }
             }
