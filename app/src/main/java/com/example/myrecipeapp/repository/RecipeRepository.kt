@@ -74,6 +74,56 @@ class RecipeRepository(private val db: AppDatabase) {
         }
     }
 
+    suspend fun searchRecipesPaged(query: String, page: Int, pageSize: Int = 30): Result<List<Recipe>> {
+        if (page == 0) {
+            try {
+                val response = RetrofitInstance.api.searchMeals(query)
+                val recipes = response.meals?.map { dto ->
+                    Recipe(
+                        id = dto.id,
+                        title = dto.title,
+                        category = dto.category.orEmpty(),
+                        area = dto.area.orEmpty(),
+                        thumbnail = dto.thumbnail.orEmpty(),
+                        instructions = dto.instructions.orEmpty(),
+                        ingredients = dto.getIngredients().map { (name, measure) ->
+                            Ingredient(name, measure)
+                        }
+                    )
+                } ?: emptyList()
+                db.recipeDao().insertRecipes(recipes.map { it.toEntity() })
+                val threshold = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
+                db.recipeDao().deleteOldRecipes(threshold)
+            } catch (_: Exception) { /* use cache */ }
+        }
+        val cached = db.recipeDao().searchRecipesPaged(query, pageSize, page * pageSize)
+        return if (cached.isNotEmpty()) Result.success(cached.map { it.toRecipe() })
+        else if (page > 0) Result.success(emptyList())
+        else Result.failure(Exception("No results found"))
+    }
+
+    suspend fun filterByCategoryPaged(category: String, page: Int, pageSize: Int = 30): Result<List<Recipe>> {
+        if (page == 0) {
+            try {
+                val response = RetrofitInstance.api.filterByCategory(category)
+                val recipes = response.meals?.map { dto ->
+                    Recipe(
+                        id = dto.id,
+                        title = dto.title,
+                        category = category,
+                        area = dto.area.orEmpty(),
+                        thumbnail = dto.thumbnail.orEmpty()
+                    )
+                } ?: emptyList()
+                db.recipeDao().insertRecipes(recipes.map { it.toEntity() })
+            } catch (_: Exception) { /* use cache */ }
+        }
+        val cached = db.recipeDao().getRecipesByCategoryPaged(category, pageSize, page * pageSize)
+        return if (cached.isNotEmpty()) Result.success(cached.map { it.toRecipe() })
+        else if (page > 0) Result.success(emptyList())
+        else Result.failure(Exception("No results found"))
+    }
+
     suspend fun filterByCategory(category: String): Result<List<Recipe>> {
         return try {
             val response = RetrofitInstance.api.filterByCategory(category)
