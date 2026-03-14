@@ -1,6 +1,7 @@
 package com.example.myrecipeapp.viewmodel
 
 import android.app.Application
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.myrecipeapp.database.AppDatabase
@@ -52,7 +53,7 @@ class RecipeListViewModel(application: Application) : AndroidViewModel(applicati
     private var searchJob: Job? = null
 
     init {
-        loadRecipes("chicken")
+        loadRecipes("rice")
         loadCategories()
     }
 
@@ -62,14 +63,14 @@ class RecipeListViewModel(application: Application) : AndroidViewModel(applicati
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(800)
-            loadRecipes(query.ifBlank { "chicken" })
+            loadRecipes(query.ifBlank { "rice" })
         }
     }
 
     fun onCategorySelected(category: String) {
         if (_selectedCategory.value == category) {
             _selectedCategory.value = null
-            loadRecipes(_searchQuery.value.ifBlank { "chicken" })
+            loadRecipes(_searchQuery.value.ifBlank { "rice" })
         } else {
             _selectedCategory.value = category
             currentCategory = category
@@ -89,7 +90,7 @@ class RecipeListViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun loadRecipes(query: String = "chicken") {
+    fun loadRecipes(query: String = "rice") {
         currentQuery = query
         currentPage = 0
         currentCategory = null
@@ -103,6 +104,14 @@ class RecipeListViewModel(application: Application) : AndroidViewModel(applicati
             }
             result.onFailure { _error.value = "Could not load recipes. Please check your connection." }
             _isLoading.value = false
+        }
+    }
+
+    fun retry() {
+        if (currentCategory != null) {
+            onCategorySelected(currentCategory!!)
+        } else {
+            loadRecipes(currentQuery)
         }
     }
 
