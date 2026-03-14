@@ -41,6 +41,12 @@ interface RecipeDao {
     // 오래된 캐시 삭제 (24시간 이상)
     @Query("DELETE FROM recipes WHERE cachedAt < :threshold")
     suspend fun deleteOldRecipes(threshold: Long)
+
+    @Query("SELECT MIN(cachedAt) FROM recipes WHERE title LIKE '%' || :query || '%'")
+    suspend fun getOldestCacheTime(query: String): Long?
+
+    @Query("SELECT MIN(cachedAt) FROM recipes WHERE category = :category")
+    suspend fun getOldestCacheTimeByCategory(category: String): Long?
 }
 
 @Dao

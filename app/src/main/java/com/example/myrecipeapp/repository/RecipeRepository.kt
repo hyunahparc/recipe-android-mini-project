@@ -13,6 +13,17 @@ import com.google.gson.reflect.TypeToken
 class RecipeRepository(private val db: AppDatabase) {
 
     private val gson = Gson()
+    private val staleThreshold = 60 * 60 * 1000L // 1시간
+
+    private suspend fun isCacheStale(query: String): Boolean {
+        val oldest = db.recipeDao().getOldestCacheTime(query) ?: return true
+        return System.currentTimeMillis() - oldest > staleThreshold
+    }
+
+    private suspend fun isCacheStaleByCategory(category: String): Boolean {
+        val oldest = db.recipeDao().getOldestCacheTimeByCategory(category) ?: return true
+        return System.currentTimeMillis() - oldest > staleThreshold
+    }
 
     suspend fun searchRecipes(query: String): Result<List<Recipe>> {
         return try {
@@ -105,7 +116,7 @@ class RecipeRepository(private val db: AppDatabase) {
     }
 
     suspend fun searchRecipesPaged(query: String, page: Int, pageSize: Int = 30): Result<List<Recipe>> {
-        if (page == 0) {
+        if (page == 0 && isCacheStale(query)) {
             try {
                 val response = RetrofitInstance.api.searchMeals(query)
                 val recipes = response.meals?.map { dto ->
@@ -133,7 +144,7 @@ class RecipeRepository(private val db: AppDatabase) {
     }
 
     suspend fun filterByCategoryPaged(category: String, page: Int, pageSize: Int = 30): Result<List<Recipe>> {
-        if (page == 0) {
+        if (page == 0 && isCacheStaleByCategory(category)) {
             try {
                 val response = RetrofitInstance.api.filterByCategory(category)
                 val recipes = response.meals?.map { dto ->
