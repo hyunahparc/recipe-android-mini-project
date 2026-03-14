@@ -47,7 +47,14 @@ fun RecipeListScreen(
         if (shouldLoadMore && hasMore) viewModel.loadNextPage()
     }
 
-    Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .statusBarsPadding()
+            .padding(horizontal = 16.dp)
+    ) {
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Recipes",
@@ -66,7 +73,11 @@ fun RecipeListScreen(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(bottom = 12.dp),
-            shape = RoundedCornerShape(12.dp)
+            shape = RoundedCornerShape(16.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = MaterialTheme.colorScheme.secondary.copy(alpha = 0.4f),
+                focusedBorderColor = MaterialTheme.colorScheme.primary
+            )
         )
 
         // Category filter chips
@@ -96,7 +107,7 @@ fun RecipeListScreen(
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(text = error!!, color = MaterialTheme.colorScheme.error)
                         Spacer(modifier = Modifier.height(8.dp))
-                        Button(onClick = { viewModel.loadRecipes() }) {
+                        Button(onClick = { viewModel.retry() }) {
                             Text("Retry")
                         }
                     }
@@ -110,7 +121,8 @@ fun RecipeListScreen(
             else -> {
                 LazyColumn(
                     state = listState,
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 16.dp)
                 ) {
                     items(recipes) { recipe ->
                         RecipeCard(recipe = recipe, onClick = { onRecipeClick(recipe.id) })
@@ -136,7 +148,8 @@ fun RecipeCard(recipe: Recipe, onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier.fillMaxWidth().clickable { onClick() },
         shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(2.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column {
             AsyncImage(
@@ -158,7 +171,7 @@ fun RecipeCard(recipe: Recipe, onClick: () -> Unit = {}) {
                     Text(
                         text = recipe.category,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.secondary
+                        color = MaterialTheme.colorScheme.primary
                     )
                 }
             }
