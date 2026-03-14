@@ -55,11 +55,16 @@ fun RecipeDetailScreen(
                 }
             }
             error != null -> {
-                Box(
+                Column(
                     modifier = Modifier.fillMaxSize().padding(padding),
-                    contentAlignment = Alignment.Center
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(text = error!!, color = MaterialTheme.colorScheme.error)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { viewModel.loadRecipe(recipeId) }) {
+                        Text("Retry")
+                    }
                 }
             }
             recipe != null -> {
