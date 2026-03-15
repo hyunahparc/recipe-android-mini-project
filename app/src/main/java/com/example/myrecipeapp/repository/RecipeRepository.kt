@@ -144,7 +144,7 @@ class RecipeRepository(private val db: AppDatabase) {
     }
 
     suspend fun filterByCategoryPaged(category: String, page: Int, pageSize: Int = 30): Result<List<Recipe>> {
-        if (page == 0 && isCacheStaleByCategory(category)) {
+        if (page == 0) {
             try {
                 val response = RetrofitInstance.api.filterByCategory(category)
                 val recipes = response.meals?.map { dto ->

@@ -53,7 +53,7 @@ class RecipeListViewModel(application: Application) : AndroidViewModel(applicati
     private var searchJob: Job? = null
 
     init {
-        loadRecipes("rice")
+        loadRecipes("chicken")
         loadCategories()
     }
 
@@ -63,14 +63,14 @@ class RecipeListViewModel(application: Application) : AndroidViewModel(applicati
         searchJob?.cancel()
         searchJob = viewModelScope.launch {
             delay(800)
-            loadRecipes(query.ifBlank { "rice" })
+            loadRecipes(query.ifBlank { "chicken" })
         }
     }
 
     fun onCategorySelected(category: String) {
         if (_selectedCategory.value == category) {
             _selectedCategory.value = null
-            loadRecipes(_searchQuery.value.ifBlank { "rice" })
+            loadRecipes(_searchQuery.value.ifBlank { "chicken" })
         } else {
             _selectedCategory.value = category
             currentCategory = category
@@ -90,7 +90,7 @@ class RecipeListViewModel(application: Application) : AndroidViewModel(applicati
         }
     }
 
-    fun loadRecipes(query: String = "rice") {
+    fun loadRecipes(query: String = "chicken") {
         currentQuery = query
         currentPage = 0
         currentCategory = null
