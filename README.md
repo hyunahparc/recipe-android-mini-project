@@ -27,6 +27,19 @@ An Android app for browsing and discovering recipes, built with Jetpack Compose.
 
 Data is fetched from [TheMealDB](https://www.themealdb.com/api.php) — a free, open recipe database.
 
+## Project Structure
+
+```
+app/src/main/java/com/example/myrecipeapp/
+├── database/       # Room DB (entities, DAO)
+├── model/          # Data models
+├── network/        # Retrofit API
+├── repository/     # Data layer
+├── ui/screen/      # Compose screens
+├── ui/theme/       # Colors, typography
+└── viewmodel/      # ViewModels
+```
+
 ## Requirements
 
 - Android 8.0 (Oreo / API 26) or higher
