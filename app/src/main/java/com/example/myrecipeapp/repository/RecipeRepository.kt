@@ -20,48 +20,6 @@ class RecipeRepository(private val db: AppDatabase) {
         return System.currentTimeMillis() - oldest > staleThreshold
     }
 
-    private suspend fun isCacheStaleByCategory(category: String): Boolean {
-        val oldest = db.recipeDao().getOldestCacheTimeByCategory(category) ?: return true
-        return System.currentTimeMillis() - oldest > staleThreshold
-    }
-
-    suspend fun searchRecipes(query: String): Result<List<Recipe>> {
-        return try {
-            // Fetch from API
-            val response = RetrofitInstance.api.searchMeals(query)
-            val recipes = response.meals?.map { dto ->
-                Recipe(
-                    id = dto.id,
-                    title = dto.title,
-                    category = dto.category.orEmpty(),
-                    area = dto.area.orEmpty(),
-                    thumbnail = dto.thumbnail.orEmpty(),
-                    instructions = dto.instructions.orEmpty(),
-                    ingredients = dto.getIngredients().map { (name, measure) ->
-                        Ingredient(name, measure)
-                    }
-                )
-            } ?: emptyList()
-
-            // Save to DB
-            db.recipeDao().insertRecipes(recipes.map { it.toEntity() })
-
-            // Delete cache older than 24 hours
-            val threshold = System.currentTimeMillis() - 24 * 60 * 60 * 1000L
-            db.recipeDao().deleteOldRecipes(threshold)
-
-            Result.success(recipes)
-        } catch (e: Exception) {
-            // Fall back to DB on API failure
-            val cached = db.recipeDao().searchRecipes(query)
-            if (cached.isNotEmpty()) {
-                Result.success(cached.map { it.toRecipe() })
-            } else {
-                Result.failure(e)
-            }
-        }
-    }
-
     suspend fun getCategories(): Result<List<Category>> {
         return try {
             // Fetch from API
@@ -163,32 +121,6 @@ class RecipeRepository(private val db: AppDatabase) {
         return if (cached.isNotEmpty()) Result.success(cached.map { it.toRecipe() })
         else if (page > 0) Result.success(emptyList())
         else Result.failure(Exception("No results found"))
-    }
-
-    suspend fun filterByCategory(category: String): Result<List<Recipe>> {
-        return try {
-            val response = RetrofitInstance.api.filterByCategory(category)
-            val recipes = response.meals?.map { dto ->
-                Recipe(
-                    id = dto.id,
-                    title = dto.title,
-                    category = category,
-                    area = dto.area.orEmpty(),
-                    thumbnail = dto.thumbnail.orEmpty()
-                )
-            } ?: emptyList()
-
-            db.recipeDao().insertRecipes(recipes.map { it.toEntity() })
-
-            Result.success(recipes)
-        } catch (e: Exception) {
-            val cached = db.recipeDao().getRecipesByCategory(category)
-            if (cached.isNotEmpty()) {
-                Result.success(cached.map { it.toRecipe() })
-            } else {
-                Result.failure(e)
-            }
-        }
     }
 
     // Recipe → RecipeEntity (convert to DB entity)

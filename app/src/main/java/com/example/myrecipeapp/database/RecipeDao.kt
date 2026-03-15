@@ -16,16 +16,8 @@ interface RecipeDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertRecipe(recipe: RecipeEntity)
 
-    // 제목으로 검색
-    @Query("SELECT * FROM recipes WHERE title LIKE '%' || :query || '%'")
-    suspend fun searchRecipes(query: String): List<RecipeEntity>
-
     @Query("SELECT * FROM recipes WHERE title LIKE '%' || :query || '%' LIMIT :limit OFFSET :offset")
     suspend fun searchRecipesPaged(query: String, limit: Int, offset: Int): List<RecipeEntity>
-
-    // 카테고리로 필터
-    @Query("SELECT * FROM recipes WHERE category = :category")
-    suspend fun getRecipesByCategory(category: String): List<RecipeEntity>
 
     @Query("SELECT * FROM recipes WHERE category = :category LIMIT :limit OFFSET :offset")
     suspend fun getRecipesByCategoryPaged(category: String, limit: Int, offset: Int): List<RecipeEntity>
@@ -34,19 +26,12 @@ interface RecipeDao {
     @Query("SELECT * FROM recipes WHERE id = :id")
     suspend fun getRecipeById(id: String): RecipeEntity?
 
-    // 모든 레시피 조회
-    @Query("SELECT * FROM recipes")
-    suspend fun getAllRecipes(): List<RecipeEntity>
-
     // 오래된 캐시 삭제 (24시간 이상)
     @Query("DELETE FROM recipes WHERE cachedAt < :threshold")
     suspend fun deleteOldRecipes(threshold: Long)
 
     @Query("SELECT MIN(cachedAt) FROM recipes WHERE title LIKE '%' || :query || '%'")
     suspend fun getOldestCacheTime(query: String): Long?
-
-    @Query("SELECT MIN(cachedAt) FROM recipes WHERE category = :category")
-    suspend fun getOldestCacheTimeByCategory(category: String): Long?
 }
 
 @Dao
